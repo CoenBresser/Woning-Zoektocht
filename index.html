@@ -12,9 +12,6 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #f4f0e8; }
   #root { min-height: 100vh; }
-  @page { size: portrait; margin: 1.5cm; }
-  @page landscape-page { size: landscape; margin: 1.5cm; }
-  .print-landscape { page: landscape-page; }
 </style>
 </head>
 <body>
@@ -1157,6 +1154,7 @@ function App() {
       background: "white"
     }
   }, /*#__PURE__*/React.createElement("div", {
+    className: "no-print",
     style: {
       position: "fixed",
       top: 0,
@@ -1207,6 +1205,7 @@ function App() {
       cursor: "pointer"
     }
   }, "Print nu"))), /*#__PURE__*/React.createElement("div", {
+    className: "no-print",
     style: {
       height: 48
     }
@@ -1348,10 +1347,14 @@ function App() {
       color: "#2D6A4F",
       marginBottom: 4
     }
-  }, "\xB7 ", v)))), /*#__PURE__*/React.createElement("div", {
+  }, "\xB7 ", v)))), /*#__PURE__*/React.createElement("style", null, `
+          @page { size: portrait; margin: 1.5cm; }
+          @page landscape-page { size: landscape; margin: 1.5cm; }
+          .print-landscape { page: landscape-page; break-before: page; }
+          @media print { .no-print { display: none !important; } }
+        `), /*#__PURE__*/React.createElement("div", {
     className: "print-landscape",
     style: {
-      pageBreakBefore: "always",
       paddingTop: 24,
       marginBottom: 40
     }
@@ -1742,7 +1745,6 @@ function App() {
     }
   }, "Samengesteld mei 2026 \xB7 Controleer actuele beschikbaarheid bij de locatie zelf")));
 }
-ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
 
 </script>
 </body>
