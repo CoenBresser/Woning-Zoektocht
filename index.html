@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wonen voor een volgende levensfase — Regio Soest</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #f4f0e8; }
+  #root { min-height: 100vh; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+
+// ── Data ─────────────────────────────────────────────────────────────────────
+
+const OPTIONS = [
+  {
+    id: 1, groep: "bestaand",
+    categorie: "Seniorencomplex",
+    naam: "Mariënhorst & Mariënheuvel",
+    adres: "Burgemeester Grothestraat 78–82, Soestdijk",
+    locatie: "Soestdijk, Soest", regio: "Soest", afstand: "0 km",
+    lat: 52.1887, lng: 5.2846,
+    aanbieder: "Woonzorg Nederland", type: "Huur", zorg: "Zorg op afroep (Mariënburg)",
+    groen: 3, sociaal: 4, luxe: 2, budget: "Sociale huur",
+    oneliner: "151 huurappartementen in Soestdijk, direct naast zorgcentrum Mariënburg met restaurant en fysiotherapeut.",
+    beschrijving: "Mariënhorst en Mariënheuvel zijn twee seniorencomplexen in Soestdijk, direct verbonden met zorgcentrum Mariënburg. In totaal 151 appartementen (131 tweekamer en 20 driekamer). Woningen op de begane grond hebben een eigen tuin of terras; hogere verdiepingen hebben een balkon. De sfeer is rustig en verzorgd. In het aangrenzende zorgcentrum vindt u dagelijks een restaurant, kapper, fysiotherapeut en winkeltje. De winkelstraat met supermarkten ligt op loopafstand.",
+    voordelen: ["Dichtstbijzijnde optie — 0 km van Soest", "Zorg direct beschikbaar via Mariënburg", "Drempelvrij, rolstoeltoegankelijk", "Voorzieningen op loopafstand"],
+    nadelen: ["Relatief compacte woningen (44–53 m²)", "Sociale huur: inkomensnorm van toepassing", "Wachtlijst via Woningnet Eemvallei"],
+    toekomst: "Toekomstbestendig: zorg kan meegroeien via Mariënburg.",
+    aandacht: "Wachtlijst via Woningnet Eemvallei. Woningen relatief compact (44–53 m²).",
+    url: "https://www.woonzorg.nl/marinhorst_en_marinheuvel_soest",
+    kosten: "€€", inkomensnorm: true,
+    label: "Dichtbij & praktisch", labelKleur: "#6B8F71",
+  },
+  {
+    id: 2, groep: "bestaand",
+    categorie: "Woongemeenschap",
+    naam: "Woongroep GOS Koningsdael",
+    adres: "Koperwiek 56, Soest",
+    locatie: "Koperwiek, Soest (bij Soester Duinen)", regio: "Soest", afstand: "~2 km",
+    lat: 52.1850, lng: 5.2700,
+    aanbieder: "Vereniging Groepswonen Ouderen Soest", type: "Sociale huur", zorg: "Bewoners voor elkaar",
+    groen: 4, sociaal: 5, luxe: 2, budget: "Sociale huur",
+    oneliner: "23 zelfstandige appartementen waarbij bewoners bewust voor elkaar kiezen — al 30 jaar actief, nabij de Soester Duinen.",
+    beschrijving: "Koningsdael is een van de oudste en meest geliefde woongemeenschappen voor ouderen in de regio — al meer dan 30 jaar actief, op Koperwiek 56 nabij de Soester Duinen en Peijnenburger bossen. De 23 zelfstandige appartementen liggen in een rustige woonwijk. Bewoners zijn actief betrokken: ze organiseren activiteiten, kijken naar elkaar om en zijn 'goede buren die in geval van nood voor elkaar klaarstaan'. Er is een gezamenlijke ontmoetingsruimte met terras, een hobbyruimte, fietsenstalling en een gemeenschappelijke tuin.",
+    voordelen: ["Sterkste sociale gemeenschap van alle opties", "Prachtige ligging nabij Soester Duinen", "30 jaar bewezen concept", "Bewoners kiezen zelf hun nieuwe buren"],
+    nadelen: ["Geen professionele zorg op locatie", "Sociale huur — kopen niet mogelijk", "Voorkeur voor instromers 50–65 jaar"],
+    toekomst: "Beperkt toekomstbestendig: bij serieuze zorgbehoefte later is verhuizing mogelijk nodig.",
+    aandacht: "Volledig sociale huur. Voorkeur voor instromers 50–65 jaar. Aanmelden via info@koningsdael.nl.",
+    url: "https://www.koningsdael.nl",
+    kosten: "€€", inkomensnorm: true,
+    label: "Meest sociaal", labelKleur: "#4A7C8E",
+  },
+  {
+    id: 3, groep: "bestaand",
+    categorie: "Seniorencomplex",
+    naam: "Andante / Orlando-terrein (Cocon Wonen)",
+    adres: "Di Lassostraat 65, Soest",
+    locatie: "Wijk Overhees, Soest", regio: "Soest", afstand: "~1 km",
+    lat: 52.1720, lng: 5.2935,
+    aanbieder: "Cocon Wonen / Dura Vermeer", type: "Huur (midden)", zorg: "Huismeester & alarmering",
+    groen: 3, sociaal: 4, luxe: 3, budget: "Middenhuur",
+    oneliner: "50 gloednieuwe seniorenappartementen op het Orlando-terrein, oplevering zomer 2026, met groene binnenplaats.",
+    beschrijving: "Andante is het nieuwste project van Cocon Wonen in Soest: 50 moderne seniorenappartementen die in de zomer van 2026 worden opgeleverd. In september 2025 werd het hoogste punt gevierd. De woningen zijn drempelvrij en levensloopbestendig ontworpen voor 65+, energiezuinig gebouwd. Het terrein grenst aan waterpartijen met een parkachtige sfeer. Ontmoetingsruimte, vaste huismeester en personenalarmering aanwezig.",
+    voordelen: ["Splinternieuw — moderne installaties en indeling", "Levensloopbestendig ontworpen voor 65+", "Groene parkachtige omgeving", "Huismeester en alarmering aanwezig"],
+    nadelen: ["Nog geen zorg op locatie — opschaling beperkt", "Oplevering nog niet gereed (zomer 2026)", "Sociale huur heeft inkomensnorm"],
+    toekomst: "Basisveiligheid aanwezig, maar geen zorginstelling op locatie.",
+    aandacht: "Oplevering zomer 2026. Sociale huur via WoningNet Eemvallei; middenhuur direct bij Cocon Wonen.",
+    url: "https://www.coconwonen.nl",
+    kosten: "€€–€€€", inkomensnorm: false,
+    label: "Oplevering 2026", labelKleur: "#8B6E3C",
+  },
+  {
+    id: 4, groep: "bestaand",
+    categorie: "Woonzorg in de natuur",
+    naam: "The Eemhorst",
+    adres: "Hooiweg 6–10, Soest",
+    locatie: "Buitengebied Soest (richting Baarn)", regio: "Soest", afstand: "~4 km",
+    lat: 52.1756, lng: 5.3248,
+    aanbieder: "The Eemhorst", type: "Huur (zorg)", zorg: "24 uur aanwezig",
+    groen: 5, sociaal: 4, luxe: 4, budget: "Op aanvraag",
+    oneliner: "Kleinschalige woonzorglocatie in het buitengebied, met 9,3 op ZorgkaartNL — voor mensen die 24-uurszorg voor dementie nodig hebben.",
+    beschrijving: "The Eemhorst is een bijzondere kleinschalige woonzorglocatie in het buitengebied tussen Soest, Baarn en Amersfoort. Gebouwd in 2016, gespecialiseerd in dementiezorg. 9 bewoners per boerderij, altijd 2–3 medewerkers overdag aanwezig. De locatie staat hoog aangeschreven: 9,3 op ZorgkaartNL op basis van 34 beoordelingen. Dagelijks verse maaltijden, ruime appartementen, en veel ruimte buiten.",
+    voordelen: ["Uitzonderlijk hoge waardering: 9,3 ZorgkaartNL", "Kleinschalig en persoonlijk (9 bewoners per boerderij)", "24u gespecialiseerde dementiezorg", "Prachtige landelijke ligging"],
+    nadelen: ["Uitsluitend voor mensen met dementie", "Geen zelfstandig wonen — zorglocatie", "Prijs op aanvraag"],
+    toekomst: "Maximaal toekomstbestendig voor wie dementiezorg nodig heeft.",
+    aandacht: "Primair zorglocatie voor mensen met dementie. Bel voor kennismakingsgesprek.",
+    url: "https://www.eemhorst.nl",
+    kosten: "€€€€", inkomensnorm: false,
+    label: "Natuur & rust", labelKleur: "#4A7A5A",
+  },
+  {
+    id: 5, groep: "bestaand",
+    categorie: "Luxe zorgresidentie",
+    naam: "Zorgresidence Het Seminarie",
+    adres: "Muurhuizen 102, Amersfoort",
+    locatie: "Historisch centrum Amersfoort", regio: "Amersfoort", afstand: "~10 km",
+    lat: 52.1576, lng: 5.3914,
+    aanbieder: "Het Seminarie", type: "All-in huur", zorg: "24 uur zorg beschikbaar",
+    groen: 3, sociaal: 4, luxe: 5, budget: "Hoog segment",
+    oneliner: "20 luxe appartementen in een historisch kloostergebouw in de Amersfoortse binnenstad, met 24u zorg.",
+    beschrijving: "Het Seminarie is 20 luxe appartementen in een zorgvuldig gerestaureerd historisch kloostergebouw aan de Muurhuizen in hartje Amersfoort. Intieme en verfijnde sfeer — monumentale architectuur gecombineerd met modern comfort. Uitzicht op de binnentuin of de grachten. Winkelstraat, restaurants en NS-station op loopafstand. Zorg is 24u beschikbaar maar nooit opdringerig aanwezig.",
+    voordelen: ["Meest luxe optie in het overzicht", "24u zorg beschikbaar in het pand", "Historisch monumentaal gebouw", "Binnenstad met alle voorzieningen"],
+    nadelen: ["All-in huur — kopen niet mogelijk", "Stedelijk karakter — minder groen", "Hoog prijssegment"],
+    toekomst: "Toekomstbestendig: 24u zorg schaalt mee met de behoefte.",
+    aandacht: "All-in huur — kopen niet mogelijk. Stedelijk/historisch karakter.",
+    url: "https://hetseminarie.nl",
+    kosten: "€€€€", inkomensnorm: false,
+    label: "Meest luxe", labelKleur: "#7B5E8A",
+  },
+  {
+    id: 6, groep: "bestaand",
+    categorie: "Luxe zorgresidentie",
+    naam: "Residentie Prinsenstaete (Rosorum)",
+    adres: "Prins Frederiklaan 4, Amersfoort",
+    locatie: "Villawijk Bergkwartier, Amersfoort", regio: "Amersfoort", afstand: "~12 km",
+    lat: 52.1485, lng: 5.3726,
+    aanbieder: "Rosorum / Korian", type: "All-in huur", zorg: "Zorg op maat, dagelijks",
+    groen: 4, sociaal: 4, luxe: 5, budget: "Hoog segment",
+    oneliner: "Markante jaren '20 villa in de chique Bergkwartier-wijk van Amersfoort — kleinschalig, warm en luxe.",
+    beschrijving: "Residentie Prinsenstaete is gevestigd in een markante jaren '20 villa in de groene villawijk Bergkwartier. Stijlvol interieur combineert historische charme met modern comfort. Gemeenschappelijke woonkamer, bibliotheek en woonkeuken met binnentuin. 26 woonstudio's, kleinschalig en persoonlijk. Zorg wordt dagelijks op maat geboden door Rosorum/Korian.",
+    voordelen: ["Luxe historische villa in groene omgeving", "Kleinschalig en warm karakter (26 bewoners)", "Dagelijkse zorg op maat", "Groene villawijk"],
+    nadelen: ["Woonstudio's — kleiner dan zelfstandig appartement", "All-in huur — kopen niet mogelijk", "Zorgindicatie kan vereist zijn"],
+    toekomst: "Toekomstbestendig: zorg schaalt mee bij toenemende behoefte.",
+    aandacht: "Woonstudio's, geen volledig apartement. Indicatie kan vereist zijn.",
+    url: "https://www.rosorum.nl/residenties/prinsenstaete/",
+    kosten: "€€€€", inkomensnorm: false,
+    label: "Luxe & groen", labelKleur: "#7B5E8A",
+  },
+  {
+    id: 7, groep: "bestaand",
+    categorie: "Woongemeenschap in park",
+    naam: "Huize Het Oosten",
+    adres: "Rubenslaan 1, Bilthoven",
+    locatie: "Bilthoven (parkterrein 4 ha)", regio: "Bilthoven / De Bilt", afstand: "~18 km",
+    lat: 52.1311, lng: 5.2007,
+    aanbieder: "Stichting Huize Het Oosten", type: "Koop én huur", zorg: "Thuiszorg op maat (Santé Partners)",
+    groen: 5, sociaal: 5, luxe: 4, budget: "Middel–hoog (koop mogelijk)",
+    oneliner: "Woongemeenschap in 4 ha park in Bilthoven met koop én huur, volledige medische voorzieningen op het terrein en rijke activiteiten.",
+    beschrijving: "Huize Het Oosten is een bijzondere woongemeenschap in een 4 hectare groot park in Bilthoven, direct grenzend aan het bos. Huur- én koopappartementen van 68–93 m². Station Bilthoven op 450 m loopafstand. Op het terrein: huisarts, apotheek, kapper, tandarts en fysiotherapie. Bewonersvereniging De Huiskring organiseert culturele en educatieve activiteiten. Elke vrijdagmiddag open Buurtkamer. In augustus 2025 ontving het Prezo-keurmerk na uitgebreide audit.",
+    voordelen: ["Enige optie met zowel koop als huur", "Volledige medische voorzieningen op terrein", "4 ha park direct aansluitend op bos", "Station op 450 m — uitstekend bereikbaar", "Rijke sociale en culturele gemeenschap"],
+    nadelen: ["18 km van Soest — verdere afstand", "Wachtlijst voor huur", "Culturele identiteit (vrijmetselaarshistorie) — past niet voor iedereen"],
+    toekomst: "Beste toekomstbestendigheid: zorg groeit mee, geen verhuizing nodig.",
+    aandacht: "Wachtlijst voor huur. Koopappartementen via makelaars in Bilthoven. Prezo-keurmerk aug. 2025.",
+    url: "https://www.huizehetoosten.nl",
+    kosten: "€€€ / 🏠", inkomensnorm: false,
+    label: "Beste match", labelKleur: "#2D6A4F",
+  },
+  {
+    id: 8, groep: "bestaand",
+    categorie: "Aanleunwoningen",
+    naam: "De Bremhorst",
+    adres: "Jan Provostlaan 163, Bilthoven",
+    locatie: "Wijk De Leyen, Bilthoven", regio: "Bilthoven / De Bilt", afstand: "~18 km",
+    lat: 52.1303, lng: 5.1964,
+    aanbieder: "Woonzorg Nederland", type: "Huur", zorg: "Zorg via verpleegtehuis op locatie",
+    groen: 4, sociaal: 3, luxe: 2, budget: "€600–965/mnd",
+    oneliner: "82 aanleunwoningen in Bilthoven, op 250 m van het Heidepark, met huisartsen en fysiotherapie direct op locatie.",
+    beschrijving: "De Bremhorst biedt 82 aanleunwoningen verdeeld over drie gebouwen in de rustige en groene wijk De Leyen in Bilthoven, op 250 m van het Heidepark. De gebouwen liggen rondom het verpleegtehuis. Op de begane grond: twee huisartsen, fysiotherapeut, tandarts en logopedist. Bushalte direct voor de deur.",
+    voordelen: ["Heidepark op 250 m — prachtig wandelgebied", "Huisartsen en medische zorg direct op locatie", "Toekomstbestendig via verpleegtehuis", "Huurprijzen relatief inzichtelijk"],
+    nadelen: ["Compacte woningen (2- en 3-kamer)", "Functioneel karakter — minder luxe", "18 km van Soest"],
+    toekomst: "Toekomstbestendig: verpleegtehuis op locatie maakt opschaling mogelijk.",
+    aandacht: "Compacte woningen, functioneel karakter. Via Woonzorg Nederland.",
+    url: "https://www.woonzorg.nl/de_bremhorst_bilthoven",
+    kosten: "€€", inkomensnorm: false,
+    label: "Groen & praktisch", labelKleur: "#4A7A5A",
+  },
+  {
+    id: 9, groep: "bestaand",
+    categorie: "Woonzorgcentrum",
+    naam: "Zorg- en Wooncentrum De Haven",
+    adres: "Op de Ree 161, Bunschoten-Spakenburg",
+    locatie: "Bunschoten-Spakenburg (Eemmeer)", regio: "Bunschoten", afstand: "~20 km",
+    lat: 52.2510, lng: 5.3731,
+    aanbieder: "De Haven", type: "Huur (zorg/Wlz)", zorg: "Volledig woonzorg aanwezig",
+    groen: 3, sociaal: 4, luxe: 3, budget: "Eigen bijdrage CAK",
+    oneliner: "Hoog gewaardeerd woonzorgcentrum (8,9 ZorgkaartNL) in uniek vissersdorp aan het Eemmeer.",
+    beschrijving: "Zorg- en Wooncentrum De Haven ligt in het karakteristieke vissersdorp Bunschoten-Spakenburg aan het Eemmeer. Hoog gewaardeerd: 8,9 op ZorgkaartNL op basis van 177 beoordelingen. Warm en persoonlijk karakter. Het dorp heeft een unieke sfeer met historische haven en visserskleding. Wandelen langs het water is direct mogelijk.",
+    voordelen: ["Uitzonderlijk hoog gewaardeerd: 8,9 ZorgkaartNL", "Unieke dorpse sfeer en ligging aan Eemmeer", "Volledig woonzorg — alles onder één dak"],
+    nadelen: ["Wlz-indicatie vereist — drempel voor zelfstandige woners", "20 km van Soest — verdere afstand", "Geen koopmogelijkheid"],
+    toekomst: "Maximaal toekomstbestendig — volledig woonzorg aanwezig.",
+    aandacht: "Wlz-indicatie vereist. Neem contact op met cliëntondersteuner.",
+    url: "https://www.dehaven.nu",
+    kosten: "€€", inkomensnorm: false,
+    label: "Dorpse sfeer", labelKleur: "#5B7FA6",
+  },
+  {
+    id: 10, groep: "bestaand",
+    categorie: "Zorgvilla",
+    naam: "Zorgvilla Steinenburgh",
+    adres: "Utrechtseweg 370, De Bilt",
+    locatie: "De Bilt (rand van Utrecht)", regio: "Bilthoven / De Bilt", afstand: "~22 km",
+    lat: 52.0998, lng: 5.1614,
+    aanbieder: "Claris Zorggroep", type: "Huur (zorg)", zorg: "24 uur zorg en begeleiding",
+    groen: 4, sociaal: 4, luxe: 4, budget: "Op aanvraag",
+    oneliner: "Kleinschalige luxe zorgvilla in De Bilt (2018), met groene tuin en volledig individueel activiteitenprogramma.",
+    beschrijving: "Zorgvilla Steinenburgh opende in 2018 haar deuren aan de Utrechtseweg in De Bilt. De villa heeft een serene groene tuin en ademt de rust van een kleine gemeenschap. Activiteitenprogramma volledig op maat per bewoner: uitstapjes naar Utrecht of Bilthoven, wandelen in Park Arenberg, tuinieren of samen koken. 24u zorg en begeleiding aanwezig.",
+    voordelen: ["Modern gebouw (2018) met comfortabele indeling", "Volledig individueel programma op maat", "Park Arenberg op loopafstand", "24u zorg"],
+    nadelen: ["Primair voor mensen met aanwezige zorgbehoefte", "22 km van Soest", "Prijs op aanvraag"],
+    toekomst: "Toekomstbestendig: zorg volledig aanwezig en schaalbaar.",
+    aandacht: "Primair voor mensen die al enige zorgbehoefte hebben.",
+    url: "https://www.claris-zorggroep.nl/zorgvillas/de-bilt",
+    kosten: "€€€€", inkomensnorm: false,
+    label: "Intiem & groen", labelKleur: "#6B8F71",
+  },
+  {
+    id: "H1", groep: "hofje",
+    categorie: "Historisch hofje",
+    naam: "Hofje De Armen de Poth",
+    adres: "Pothstraat 16, Amersfoort",
+    locatie: "Historisch centrum Amersfoort", regio: "Amersfoort", afstand: "~10 km",
+    lat: 52.1548, lng: 5.3844,
+    aanbieder: "Stichting Armen de Poth", type: "Huur (zeer betaalbaar)", zorg: "Geen zorg op locatie",
+    groen: 3, sociaal: 5, luxe: 3, budget: "Lage huur (bescheiden inkomen)",
+    oneliner: "48 woningen rondom een middeleeuwse kapel (ca. 1500) in Amersfoort — een verstilde oase van rust, midden in de stad.",
+    beschrijving: "Een van de mooiste historische hofjes van Nederland, midden in de Amersfoortse binnenstad. 48 woningen rondom de middeleeuwse Sint-Rochuskapel en een rustige binnentuin. Rijksmonument. Bezoekers omschrijven het als 'oase van rust' en 'verborgen schat'. Levendige gemeenschapszin: bewoners kennen en groeten elkaar. Historische binnenstad direct om de hoek.",
+    voordelen: ["Unieke historische setting — rijksmonument", "Sterke gemeenschapszin en sociale sfeer", "Betaalbare huur", "Historisch centrum met alle voorzieningen"],
+    nadelen: ["Inkomensnorm van toepassing", "Geen zorg op locatie", "Wachtlijst", "Woningen zijn historisch — beperkte moderne aanpassingen"],
+    toekomst: "Beperkt toekomstbestendig: geen zorg op locatie.",
+    aandacht: "Inkomensnorm van toepassing. Wachtlijst. Aanmelden via huisvesting@armendepoth.nl.",
+    url: "https://www.armendepoth.nl",
+    kosten: "€€", inkomensnorm: false,
+    label: "Historisch hofje", labelKleur: "#7B5234",
+  },
+  {
+    id: "H2", groep: "hofje",
+    categorie: "Modern hofje — nieuwbouw",
+    naam: "Knarrenhof Zeist",
+    adres: "Van Renesselaan, Zeist (in ontwikkeling)",
+    locatie: "Zeist (nabij bos Utrechtse Heuvelrug)", regio: "Bilthoven / De Bilt", afstand: "~25 km",
+    lat: 52.0889, lng: 5.2333,
+    aanbieder: "Stichting Knarrenhof / gemeente Zeist", type: "Koop & huur", zorg: "Geen — bewoners voor elkaar",
+    groen: 4, sociaal: 5, luxe: 3, budget: "Divers: sociaal huur t/m hogere koop",
+    oplevering: "~2028",
+    oneliner: "60 hofjewoningen in Zeist: privacy + gemeenschap zonder verplichtingen, mix van huur en koop, nabij het bos.",
+    beschrijving: "Knarrenhof is het moderne hofje-concept voor de 21e eeuw: zelfstandige levensloopbestendige woningen rondom een gedeelde tuin voor mensen van 45+. Geen verplichte activiteiten, geen zorginstelling — maar gelijkgestemde buren die je kennen. In Zeist is de intentieovereenkomst getekend voor 60 woningen: 20 sociale huur en 40 koopwoningen in diverse prijsklassen. Bosrijke omgeving Utrechtse Heuvelrug.",
+    voordelen: ["Uniek concept: privacy + gemeenschap", "Mix van huur en koop (ook sociale huur)", "Bosrijke omgeving Zeist", "Bewoners mee in het ontwerp"],
+    nadelen: ["Oplevering pas ~2028", "25 km van Soest", "Geen zorg op locatie"],
+    toekomst: "Beperkt toekomstbestendig voor zorg, maar wel sociale veiligheid via buren.",
+    aandacht: "Nu inschrijven via knarrenhof.nl vergroot kansen. Oplevering ~2028.",
+    url: "https://knarrenhof.nl/zeist/",
+    kosten: "€€–€€€ / 🏠", inkomensnorm: false,
+    label: "Hofje · ~2028", labelKleur: "#5B6E3C",
+  },
+  {
+    id: "H3", groep: "hofje",
+    categorie: "Modern hofje — initiatiefgroep",
+    naam: "Knarrenhof Amersfoort",
+    adres: "Amersfoort (locatie nog niet vastgesteld)",
+    locatie: "Amersfoort", regio: "Amersfoort", afstand: "~10 km",
+    lat: 52.1561, lng: 5.3878,
+    aanbieder: "Stichting Knarrenhof", type: "Koop & huur (toekomstig)", zorg: "Geen — bewoners voor elkaar",
+    groen: 4, sociaal: 5, luxe: 3, budget: "Divers — afhankelijk van project",
+    oneliner: "Actieve initiatiefgroep in Amersfoort voor een Knarrenhof — inschrijven nu gratis en vrijblijvend.",
+    beschrijving: "In Amersfoort is een actieve initiatiefgroep bezig met plannen voor een Knarrenhof. Er is al een groeiende wachtlijst. Het concept: zelfstandige woningen rondom een gedeelde tuin, geen verplichtingen, maar gelijkgestemde buren die je kennen. Inschrijven kost niets. Hoe eerder ingeschreven, hoe beter de positie zodra een project beschikbaar komt.",
+    voordelen: ["Dichterbij dan Zeist — Amersfoort regio", "Inschrijven gratis en vrijblijvend", "Knarrenhof-concept: bewezen in andere steden"],
+    nadelen: ["Nog geen locatie of datum vastgesteld", "Onzekere tijdlijn"],
+    toekomst: "Onbekend — afhankelijk van locatievinding.",
+    aandacht: "Nog geen vaste locatie. Gratis inschrijven via knarrenhof.nl.",
+    url: "https://knarrenhof.nl/amersfoort-vereniging/",
+    kosten: "€€–€€€ / 🏠", inkomensnorm: false,
+    label: "Inschrijven nu", labelKleur: "#5B6E3C",
+  },
+  {
+    id: "N1", groep: "nieuwbouw",
+    categorie: "Nieuwbouw seniorencomplex",
+    naam: "Andante — Di Lassostraat",
+    adres: "Di Lassostraat 65, Soest",
+    locatie: "Wijk Overhees, Soest", regio: "Soest", afstand: "~1 km",
+    lat: 52.1715, lng: 5.2928,
+    aanbieder: "Cocon Wonen / Dura Vermeer", type: "Huur (sociaal & midden)", zorg: "Huismeester & alarmering",
+    groen: 3, sociaal: 4, luxe: 3, budget: "Sociaal / middenhuur",
+    oplevering: "Zomer 2026",
+    oneliner: "50 levensloopbestendige seniorenappartementen in Soest — oplevering zomer 2026, energiezuinig en duurzaam.",
+    beschrijving: "Andante is het nieuwste project van Cocon Wonen op het Orlando-terrein in Soest. 50 moderne appartementen voor 65+, oplevering zomer 2026. Energiezuinig, drempelvrij en levensloopbestendig. Parkachtige omgeving met waterpartijen. Ontmoetingsruimte en vaste huismeester.",
+    voordelen: ["Nieuwbouw: moderne installaties en energielabel", "Levensloopbestendig ontworpen", "Dichtbij in Soest", "Ontmoetingsruimte en huismeester"],
+    nadelen: ["Oplevering nog niet beschikbaar (zomer 2026)", "Geen zorg op locatie"],
+    toekomst: "Basisveiligheid maar geen zorginstelling — beperkt toekomstbestendig.",
+    aandacht: "Oplevering zomer 2026. Sociale huur via WoningNet Eemvallei.",
+    url: "https://www.coconwonen.nl",
+    kosten: "€€–€€€", inkomensnorm: false,
+    label: "Oplevering 2026", labelKleur: "#B87333",
+  },
+  {
+    id: "N2", groep: "nieuwbouw",
+    categorie: "Nieuwbouw woonzorgcomplex",
+    naam: "Amerhorst nieuwbouw",
+    adres: "Zandbergenlaan, Amersfoort (Leusderkwartier)",
+    locatie: "Leusderkwartier, Amersfoort", regio: "Amersfoort", afstand: "~10 km",
+    lat: 52.1630, lng: 5.3970,
+    aanbieder: "Habion / Amaris Zorggroep", type: "Vrije sector huur + zorg", zorg: "24/7 zorg nabij (Amaris)",
+    groen: 4, sociaal: 4, luxe: 4, budget: "Vrije sector — prijs n.n.b.",
+    oplevering: "2027–2028",
+    oneliner: "76 nieuwe woningen grenzend aan het bos, met 24/7 zorg nabij én mogelijkheid om later op dezelfde locatie meer zorg te ontvangen.",
+    beschrijving: "Op de locatie van de voormalige Amerhorst verrijzen twee gebouwen met 76 woningen grenzend aan stadslandgoed Nimmerdor en het bos. Gebouw B: 36 zelfstandige driekamerappartementen met 24/7 zorg van Amaris nabij. Doorstroming naar intensievere zorg op dezelfde locatie is mogelijk. Sloop gestart jan. 2026. Goudniveau duurzaamheid.",
+    voordelen: ["Uniek: doorstromen naar meer zorg op dezelfde locatie", "24/7 zorg in de nabijheid", "Nieuw, duurzaam en klimaatadaptief", "Bosrijke ligging Leusderkwartier"],
+    nadelen: ["Oplevering 2027–2028 — langste wachttijd", "Prijs nog niet gecommuniceerd"],
+    toekomst: "Sterkste toekomstbestendigheid van alle nieuwbouwprojecten.",
+    aandacht: "Nu aanmelden via habion.nl. Oplevering 2027–2028.",
+    url: "https://www.habion.nl/projecten/amerhorst",
+    kosten: "€€€", inkomensnorm: false,
+    label: "Toekomstbestendig", labelKleur: "#2D6A4F",
+  },
+  {
+    id: "N3", groep: "nieuwbouw",
+    categorie: "Nieuwbouw koopappartementen",
+    naam: "VillaVerde — Leyens Erve",
+    adres: "Leyenseweg, Bilthoven",
+    locatie: "Bilthoven (naast villawijk Vogelzang)", regio: "Bilthoven / De Bilt", afstand: "~18 km",
+    lat: 52.1330, lng: 5.2020,
+    aanbieder: "Leyens Erve / Aalberts Bouw", type: "Koop", zorg: "Geen zorg op locatie",
+    groen: 4, sociaal: 3, luxe: 4, budget: "€510.000–€862.500 v.o.n.",
+    oplevering: "Zomer 2026",
+    oneliner: "16 ruime koopappartementen (85–140 m²) in Bilthoven, nabij NS-station, groene binnentuin met wadi — nog enkele beschikbaar.",
+    beschrijving: "VillaVerde is een vierlaags gebouw met bijzondere kapvorm naast de villawijk Vogelzang in Bilthoven. 16 koopappartementen van 85–140 m², elk met eigen plattegrond. Vloerverwarming, vloerkoeling en WTW-ventilatie. Groene binnentuin met wadi. Centrum Bilthoven en NS-station op loopafstand. Nog enkele beschikbaar.",
+    voordelen: ["Koopmogelijkheid in Bilthoven", "Ruime appartementen (85–140 m²)", "NS-station Bilthoven op loopafstand", "Groene omgeving Bilthoven"],
+    nadelen: ["Geen zorg op locatie", "Hoog prijssegment", "Nog enkele beschikbaar — snel handelen"],
+    toekomst: "Geen zorg — bij toenemende behoefte eventueel door naar Huize Het Oosten nabij.",
+    aandacht: "Snel informeren — nog enkele beschikbaar. Prijzen v.o.n.",
+    url: "https://leyenserve.nl",
+    kosten: "🏠", inkomensnorm: false,
+    label: "Koop · Zomer 2026", labelKleur: "#7B5E8A",
+  },
+  {
+    id: "N4", groep: "nieuwbouw",
+    categorie: "Nieuwbouw levensloopbestendig",
+    naam: "Gregoriuslaan seniorenwoningen",
+    adres: "Gregoriuslaan 10, Bilthoven",
+    locatie: "Bilthoven", regio: "Bilthoven / De Bilt", afstand: "~18 km",
+    lat: 52.1310, lng: 5.1980,
+    aanbieder: "Woongroen", type: "Huur (sociaal & midden)", zorg: "Geen zorg op locatie",
+    groen: 4, sociaal: 3, luxe: 3, budget: "Sociale huur / middenhuur",
+    oplevering: "2027",
+    oneliner: "13 huurwoningen exclusief voor 65+ in Bilthoven — 4 met eigen tuin — kleinschalig en inpandig in de buurt.",
+    beschrijving: "Op het voormalige schoolterrein aan de Gregoriuslaan in Bilthoven realiseert Woongroen 13 levensloopbestendige huurwoningen exclusief voor 65+. 9 sociale huurappartementen en 4 middenhuurwoningen met eigen kleine tuin. Twee woonlagen met kap, passend in de bestaande buurt. Kleinschalig en ingetogen.",
+    voordelen: ["Exclusief voor 65+", "4 woningen met eigen tuin", "Kleinschalig en buurtgericht", "Bilthoven — groene omgeving"],
+    nadelen: ["Oplevering 2027", "Geen zorg op locatie", "Kleine schaal — beperkte sociale gemeenschap"],
+    toekomst: "Geen zorg aanwezig — ligging nabij Huize Het Oosten als optie later.",
+    aandacht: "Oplevering 2027. Tijdig inschrijven bij WoningNet De Bilt.",
+    url: "https://www.woongroen.nl",
+    kosten: "€€", inkomensnorm: false,
+    label: "Oplevering 2027", labelKleur: "#4A7C8E",
+  },
+];
+
+// ── Leaflet ───────────────────────────────────────────────────────────────────
+function useLeaflet() {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    if (window.L) { setReady(true); return; }
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
+    document.head.appendChild(link);
+    const script = document.createElement("script");
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
+    script.onload = () => setReady(true);
+    document.head.appendChild(script);
+  }, []);
+  return ready;
+}
+
+function LocatieKaart({ lat, lng, mapKey }) {
+  const divId = useRef("m_" + mapKey + "_" + Math.random().toString(36).slice(2)).current;
+  const mapRef = useRef(null);
+  useEffect(() => {
+    if (mapRef.current) return;
+    const L = window.L;
+    if (!L) return;
+    const map = L.map(divId, {
+      center: [lat, lng], zoom: 15,
+      zoomControl: false, scrollWheelZoom: false,
+      dragging: false, doubleClickZoom: false,
+      boxZoom: false, keyboard: false, attributionControl: false,
+    });
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
+    const icon = L.divIcon({
+      html: `<div style="width:16px;height:16px;background:#C0392B;border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.4)"></div>`,
+      iconSize: [16, 16], iconAnchor: [8, 8], className: "",
+    });
+    L.marker([lat, lng], { icon }).addTo(map);
+    mapRef.current = map;
+  }, []);
+  return (
+    <div style={{ marginBottom: 4 }}>
+      <div id={divId} style={{ width: "100%", height: 150, borderRadius: 8, border: "1px solid #ddd", overflow: "hidden" }} />
+      <div style={{ fontSize: 9, color: "#bbb", fontFamily: "sans-serif", textAlign: "right", marginTop: 2 }}>© OpenStreetMap contributors</div>
+    </div>
+  );
+}
+
+function Stars({ n }) {
+  return (
+    <span>
+      <span style={{ color: "#DAA520" }}>{"★".repeat(n)}</span>
+      <span style={{ color: "#e0e0e0" }}>{"★".repeat(5 - n)}</span>
+    </span>
+  );
+}
+
+// ── Stappenplan ───────────────────────────────────────────────────────────────
+const STAPPEN = [
+  { nr: 1, titel: "Lees dit overzicht op uw eigen tempo", tekst: "Blader rustig door de opties en markeer wat u aanspreekt. Vertrouw ook op uw eerste indruk — niet alleen op de details. Er is geen haast." },
+  { nr: 2, titel: "Kies 2 à 3 opties om nader te verkennen", tekst: "Gebruik de voor/nadelen-tabel verderop om te vergelijken. Welke combinatie van groen, sociaal en zorg past het beste bij u?" },
+  { nr: 3, titel: "Ga kijken", tekst: "De meeste locaties verwelkomen een vrijblijvend kennismakingsbezoek. Een bezoek geeft u een gevoel dat op papier niet over te brengen is: sfeer, mensen, omgeving." },
+  { nr: 4, titel: "Vraag praktische informatie op", tekst: "Is er een wachtlijst? Wat zijn de totale maandelijkse kosten? Hoe werkt zorgopschaling? Wat is de gemiddelde leeftijd van de bewoners?" },
+  { nr: 5, titel: "Bespreek het samen", tekst: "Neem de tijd om uw indrukken te bespreken met mensen die u vertrouwt. Er zijn geen foute antwoorden." },
+];
+
+// ── Voor/nadelen tabel ────────────────────────────────────────────────────────
+function VoorNadelenTabel({ opties, filter, onSelect, printMode }) {
+  const visible = opties.filter(o => {
+    if (filter === "Alles") return true;
+    if (filter === "Nieuwbouw") return o.groep === "nieuwbouw";
+    if (filter === "Hofjes") return o.groep === "hofje";
+    if (filter === "Koop mogelijk") return o.type.toLowerCase().includes("koop");
+    return o.regio === filter;
+  }).sort((a, b) => (a.inkomensnorm ? 1 : 0) - (b.inkomensnorm ? 1 : 0));
+
+  const p = null;
+  const fs = 11;
+
+  return (
+    <div style={{ overflowX: printMode ? "visible" : "auto", marginBottom: 8 }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "sans-serif", fontSize: fs }}>
+        <thead>
+          <tr style={{ background: "#1A5C3A", color: "white" }}>
+            <th style={{ padding: p || "8px 10px", textAlign: "left", fontWeight: 600 }}>Optie</th>
+            <th style={{ padding: p || "8px 6px", textAlign: "center", fontWeight: 600 }}>🌿</th>
+            <th style={{ padding: p || "8px 6px", textAlign: "center", fontWeight: 600 }}>👥</th>
+            <th style={{ padding: p || "8px 6px", textAlign: "center", fontWeight: 600 }}>✨</th>
+            <th style={{ padding: p || "8px 10px", textAlign: "left", fontWeight: 600 }}>Voordeel</th>
+            <th style={{ padding: p || "8px 10px", textAlign: "left", fontWeight: 600 }}>Aandachtspunt</th>
+            <th style={{ padding: p || "8px 10px", textAlign: "left", fontWeight: 600 }}>Zorg later</th>
+            <th style={{ padding: p || "8px 10px", textAlign: "center", fontWeight: 600 }}>Kosten</th>
+          </tr>
+        </thead>
+        <tbody>
+          {visible.map((o, i) => (
+            <tr key={o.id} onClick={() => onSelect(o.id)} style={{ background: i % 2 === 0 ? "white" : "#f7f4ee", borderBottom: "1px solid #e8e0d0", cursor: "pointer", transition: "background 0.1s" }}
+              onMouseEnter={e => e.currentTarget.style.background = "#eaf2ec"}
+              onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? "white" : "#f7f4ee"}>
+              <td style={{ padding: p || "7px 10px", fontWeight: 600, color: "#1A5C3A", minWidth: 130 }}>
+                <span style={{ display: "block", fontSize: 10, fontWeight: 400, color: "#aaa" }}>{o.categorie}</span>
+                {o.naam.length > 28 ? o.naam.slice(0, 26) + "…" : o.naam}
+                <span style={{ display: "block", fontSize: 10, fontWeight: 400, color: "#888", marginTop: 1 }}>📍 {o.locatie.split(",").pop().trim()}</span>
+              </td>
+              <td style={{ padding: p || "7px 6px", textAlign: "center" }}><Stars n={o.groen} /></td>
+              <td style={{ padding: p || "7px 6px", textAlign: "center" }}><Stars n={o.sociaal} /></td>
+              <td style={{ padding: p || "7px 6px", textAlign: "center" }}><Stars n={o.luxe} /></td>
+              <td style={{ padding: p || "7px 10px", color: "#2D6A4F", minWidth: 120 }}>{o.voordelen[0]}</td>
+              <td style={{ padding: p || "7px 10px", color: "#8B5E00", minWidth: 120 }}>{o.nadelen[0]}</td>
+              <td style={{ padding: p || "7px 10px", minWidth: 110, fontSize: 10.5 }}>
+                <span style={{
+                  background: o.toekomst.startsWith("Maximaal") ? "#d4edda" :
+                               o.toekomst.startsWith("Toekomstbestendig") ? "#e8f5e9" :
+                               o.toekomst.startsWith("Beste") ? "#c8e6c9" :
+                               o.toekomst.startsWith("Beperkt") ? "#fff3cd" : "#fce8e6",
+                  color: o.toekomst.startsWith("Maximaal") || o.toekomst.startsWith("Beste") ? "#1A5C3A" :
+                         o.toekomst.startsWith("Toekomstbestendig") ? "#2D6A4F" :
+                         o.toekomst.startsWith("Beperkt") ? "#856404" : "#842029",
+                  padding: "2px 6px", borderRadius: 4, display: "inline-block",
+                }}>
+                  {o.toekomst.startsWith("Maximaal") ? "✅ Maximaal" :
+                   o.toekomst.startsWith("Beste") ? "✅ Beste" :
+                   o.toekomst.startsWith("Toekomstbestendig") ? "✅ Ja" :
+                   o.toekomst.startsWith("Beperkt") ? "⚠️ Beperkt" : "❓ Onbekend"}
+                </span>
+              </td>
+              <td style={{ padding: p || "7px 10px", textAlign: "center", minWidth: 80 }}>
+                {o.inkomensnorm
+                  ? <span style={{ fontSize: 10, color: "#999", fontFamily: "sans-serif", fontStyle: "italic" }}>valt af †</span>
+                  : <span style={{ fontSize: 13, letterSpacing: 1 }}>{o.kosten}</span>
+                }
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div style={{ padding: "8px 10px", fontSize: 10, color: "#999", fontFamily: "sans-serif", lineHeight: 1.6, borderTop: "1px solid #f0ece4" }}>
+        <strong>€€</strong> ca. €800–1.500/mnd &nbsp;·&nbsp; <strong>€€€</strong> ca. €1.500–2.500/mnd &nbsp;·&nbsp; <strong>€€€€</strong> ca. €2.500+/mnd (incl. zorg) &nbsp;·&nbsp; <strong>🏠</strong> Koop (eigen vermogen vereist)<br/>
+        † Inkomensnorm van toepassing — valt af op basis van inkomen/vermogen.<br/>
+        Kostenindicaties zijn globaal en gebaseerd op openbare informatie (mei 2026). Werkelijke kosten hangen af van woningtype, zorgbehoefte en servicekosten. Vraag altijd een actueel kostenoverzicht op bij de locatie zelf.
+      </div>
+    </div>
+  );
+}
+
+// ── Optiekaart ────────────────────────────────────────────────────────────────
+function OptieKaart({ opt, open, onToggle, leafletReady, forceOpen }) {
+  const GROEP_KLEUR = { bestaand: "#1A5C3A", nieuwbouw: "#8B6E3C", hofje: "#5B6E3C" };
+  const bg = GROEP_KLEUR[opt.groep] || "#1A5C3A";
+  const isOpen = open || forceOpen;
+
+  return (
+    <div id={`optie-${opt.id}`} style={{
+      background: "white", borderRadius: forceOpen ? 0 : 12, marginBottom: forceOpen ? 0 : 10, overflow: "hidden",
+      boxShadow: forceOpen ? "none" : isOpen ? "0 4px 20px rgba(0,0,0,0.13)" : "0 1px 4px rgba(0,0,0,0.07)",
+      border: forceOpen ? "none" : `2px solid ${isOpen ? bg : "transparent"}`,
+      borderBottom: forceOpen ? "1px solid #ddd" : undefined,
+      transition: "all 0.2s ease",
+    }}>
+      {/* Header */}
+      <div onClick={forceOpen ? undefined : onToggle} style={{ cursor: forceOpen ? "default" : "pointer" }}>
+        {/* Kleurband */}
+        <div style={{ background: bg, padding: "10px 15px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 9, fontFamily: "sans-serif", letterSpacing: 1, textTransform: "uppercase", marginBottom: 2 }}>
+              {opt.categorie}
+              {opt.oplevering && <span style={{ marginLeft: 8, background: "rgba(255,255,255,0.2)", padding: "1px 6px", borderRadius: 8 }}>🏗 {opt.oplevering}</span>}
+              {opt.groep === "hofje" && <span style={{ marginLeft: 8, background: "rgba(255,255,255,0.2)", padding: "1px 6px", borderRadius: 8 }}>🏡 Hofje</span>}
+            </div>
+            <div style={{ color: "white", fontSize: 15, fontFamily: "Georgia, serif", fontWeight: "bold", lineHeight: 1.3 }}>{opt.naam}</div>
+          </div>
+          {!forceOpen && <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, marginLeft: 10 }}>{isOpen ? "▲" : "▼"}</div>}
+        </div>
+
+        {/* Collapsed body: one-liner + scores */}
+        {!isOpen && (
+          <div style={{ padding: "10px 15px 12px" }}>
+            <div style={{ fontSize: 12, color: "#555", fontFamily: "sans-serif", lineHeight: 1.5, marginBottom: 8 }}>
+              {opt.oneliner}
+            </div>
+            <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
+              {[["🌿", opt.groen], ["👥", opt.sociaal], ["✨", opt.luxe]].map(([emoji, n]) => (
+                <div key={emoji} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <span style={{ fontSize: 11 }}>{emoji}</span>
+                  <Stars n={n} />
+                </div>
+              ))}
+              <span style={{ fontSize: 11, color: "#999", fontFamily: "sans-serif", marginLeft: "auto" }}>{opt.afstand}</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Expanded details */}
+      {isOpen && (
+        <div style={{ background: "#f9f6f1", borderTop: `3px solid ${bg}` }}>
+          {/* Adres + scores */}
+          <div style={{ padding: "12px 15px 8px", display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center", borderBottom: "1px solid #ede5d4" }}>
+            <div style={{ fontSize: 11, color: "#666", fontFamily: "sans-serif", flex: 1 }}>
+              📍 {opt.adres}
+            </div>
+            {[["🌿 Groen", opt.groen], ["👥 Sociaal", opt.sociaal], ["✨ Luxe", opt.luxe]].map(([lbl, n]) => (
+              <div key={lbl} style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 9, color: "#bbb", fontFamily: "sans-serif", letterSpacing: 1, textTransform: "uppercase", marginBottom: 1 }}>{lbl}</div>
+                <Stars n={n} />
+              </div>
+            ))}
+          </div>
+
+          <div style={{ padding: "12px 15px" }}>
+            {/* Kaart */}
+            {leafletReady
+              ? <LocatieKaart lat={opt.lat} lng={opt.lng} mapKey={String(opt.id)} />
+              : <div style={{ height: 150, background: "#eee", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#aaa", fontFamily: "sans-serif", marginBottom: 6 }}>Kaart laden…</div>
+            }
+
+            {/* Beschrijving */}
+            <p style={{ margin: "0 0 12px", fontSize: 13, lineHeight: 1.7, color: "#333" }}>{opt.beschrijving}</p>
+
+            {/* Voordelen / nadelen */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+              <div style={{ background: "#e8f5e9", borderRadius: 8, padding: "10px 12px" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#1A5C3A", fontFamily: "sans-serif", marginBottom: 6 }}>✅ Voordelen</div>
+                {opt.voordelen.map((v, i) => (
+                  <div key={i} style={{ fontSize: 11, fontFamily: "sans-serif", color: "#2D6A4F", marginBottom: 3 }}>· {v}</div>
+                ))}
+              </div>
+              <div style={{ background: "#fff8e6", borderRadius: 8, padding: "10px 12px" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#8B5E00", fontFamily: "sans-serif", marginBottom: 6 }}>⚠️ Aandachtspunten</div>
+                {opt.nadelen.map((n, i) => (
+                  <div key={i} style={{ fontSize: 11, fontFamily: "sans-serif", color: "#6B5000", marginBottom: 3 }}>· {n}</div>
+                ))}
+              </div>
+            </div>
+
+            {/* Toekomst */}
+            <div style={{ background: "#EAF2EC", borderLeft: "3px solid #1A5C3A", padding: "8px 12px", borderRadius: 4, fontSize: 12, fontFamily: "sans-serif", color: "#1A5C3A", marginBottom: 10 }}>
+              🔮 <strong>Zorg op de lange termijn:</strong> {opt.toekomst}
+            </div>
+
+            {/* Detail rij */}
+            <div style={{ fontSize: 12, fontFamily: "sans-serif", color: "#555", marginBottom: 4 }}>
+              <strong>Type:</strong> {opt.type} &nbsp;·&nbsp; <strong>Budget:</strong> {opt.budget}
+            </div>
+            <div style={{ fontSize: 12, fontFamily: "sans-serif", color: "#555", marginBottom: 12 }}>
+              <strong>Zorg:</strong> {opt.zorg} &nbsp;·&nbsp; <strong>Aanbieder:</strong> {opt.aanbieder}
+            </div>
+
+            {opt.url && (
+              <a href={opt.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+                style={{ display: "inline-block", padding: "8px 16px", background: bg, color: "white", borderRadius: 6, textDecoration: "none", fontSize: 12, fontFamily: "sans-serif" }}>
+                Meer informatie →
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── App ───────────────────────────────────────────────────────────────────────
+export default function App() {
+  const [actief, setActief] = useState(null);
+  const [filter, setFilter] = useState("Alles");
+  const [sectie, setSectie] = useState("stappenplan");
+  const [isPrinting, setIsPrinting] = useState(false);
+  const leafletReady = useLeaflet();
+
+  const handlePreview = () => setIsPrinting(true);
+  const handlePrintNow = () => window.print();
+  const handlePrintClose = () => setIsPrinting(false);
+
+  const handleSelectOptie = (id) => {
+    setSectie("opties");
+    setActief(id);
+    setTimeout(() => {
+      const el = document.getElementById(`optie-${id}`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+  };
+
+  const categories = ["Alles", "Soest", "Amersfoort", "Bilthoven / De Bilt", "Bunschoten", "Nieuwbouw", "Hofjes", "Koop mogelijk"];
+
+  const filtered = OPTIONS.filter((o) => {
+    if (filter === "Alles") return true;
+    if (filter === "Nieuwbouw") return o.groep === "nieuwbouw";
+    if (filter === "Hofjes") return o.groep === "hofje";
+    if (filter === "Koop mogelijk") return o.type.toLowerCase().includes("koop");
+    return o.regio === filter;
+  });
+
+  const NAV = [
+    { id: "stappenplan", label: "📋 Stappenplan" },
+    { id: "voordelen", label: "⚖️ Vergelijking" },
+    { id: "opties", label: "🏠 Alle opties" },
+  ];
+
+  const bgColor = isPrinting ? "white" : "#f4f0e8";
+
+  return (
+    <div style={{ fontFamily: "Georgia, serif", background: bgColor, minHeight: "100vh", color: "#2C2C2C" }}>
+
+    {/* ── PRINT LAYOUT ── */}
+    {isPrinting && (
+      <div style={{ background: "white" }}>
+        {/* Floating print bar */}
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999, background: "#1A5C3A", color: "white", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 20px", boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}>
+          <span style={{ fontFamily: "sans-serif", fontSize: 13 }}>🖨 Afdrukvoorbeeld — controleer de opmaak en klik op <strong>Print nu</strong></span>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button onClick={handlePrintClose} style={{ padding: "6px 14px", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.4)", borderRadius: 6, color: "white", fontFamily: "sans-serif", fontSize: 12, cursor: "pointer" }}>← Terug</button>
+            <button onClick={handlePrintNow} style={{ padding: "6px 16px", background: "white", border: "none", borderRadius: 6, color: "#1A5C3A", fontFamily: "sans-serif", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Print nu</button>
+          </div>
+        </div>
+        {/* Spacer for fixed bar */}
+        <div style={{ height: 48 }} />
+
+        <div style={{ padding: "0 24px 40px" }}>
+        {/* Print header */}
+        <div style={{ background: "#1A5C3A", color: "white", padding: "20px 24px", marginBottom: 32, marginLeft: -24, marginRight: -24 }}>
+          <div style={{ fontSize: 9, letterSpacing: 3, textTransform: "uppercase", opacity: 0.5, marginBottom: 4, fontFamily: "sans-serif" }}>Oriëntatiepakket · Regio Soest · Mei 2026</div>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: "normal" }}>Wonen voor een volgende levensfase</h1>
+          <p style={{ margin: "4px 0 0", fontSize: 12, opacity: 0.65, fontFamily: "sans-serif" }}>17 opties · Soest · Amersfoort · Bilthoven · Bunschoten · incl. hofjes & nieuwbouw</p>
+        </div>
+
+        {/* Section 1: Stappenplan */}
+        <div style={{ marginBottom: 40 }}>
+          <div style={{ borderBottom: "2px solid #1A5C3A", marginBottom: 20, paddingBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 18 }}>📋</span>
+            <h2 style={{ margin: 0, fontSize: 18, color: "#1A5C3A", fontWeight: "bold" }}>Stappenplan</h2>
+          </div>
+          <div style={{ background: "white", borderRadius: 8, padding: "16px 18px", marginBottom: 12, border: "1px solid #e0d8cc" }}>
+            <p style={{ fontSize: 13, lineHeight: 1.7, color: "#444", margin: 0 }}>Dit pakket is samengesteld om rustig en op eigen tempo de mogelijkheden te verkennen voor een prettige volgende woonomgeving. U hoeft niets te beslissen — het gaat erom een gevoel te krijgen: wat spreekt mij aan?</p>
+          </div>
+          {STAPPEN.map(s => (
+            <div key={s.nr} style={{ display: "flex", gap: 14, marginBottom: 10, background: "white", borderRadius: 8, padding: "14px 16px", border: "1px solid #e0d8cc" }}>
+              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#1A5C3A", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "sans-serif", fontWeight: 700, fontSize: 15, flexShrink: 0 }}>{s.nr}</div>
+              <div>
+                <div style={{ fontWeight: "bold", fontSize: 13, color: "#1A5C3A", marginBottom: 3, fontFamily: "sans-serif" }}>{s.titel}</div>
+                <div style={{ fontSize: 12, color: "#555", lineHeight: 1.6 }}>{s.tekst}</div>
+              </div>
+            </div>
+          ))}
+          <div style={{ background: "#EAF2EC", borderRadius: 8, padding: "14px 18px", marginTop: 12, border: "1px solid #b8dfc4" }}>
+            <div style={{ fontFamily: "sans-serif", fontWeight: 700, color: "#1A5C3A", marginBottom: 8, fontSize: 12 }}>💡 Wat mee te nemen bij een bezoek</div>
+            {["Is er een wachtlijst, en hoe lang is die?","Wat zijn de totale maandelijkse kosten (huur/koop + servicekosten + zorg)?","Hoe werkt zorgopschaling als mijn behoefte groeit — kan ik hier blijven?","Wat is de gemiddelde leeftijd van de huidige bewoners?","Zijn er activiteiten, en wie organiseert die?","Mag ik een appartement zien en even in de ontmoetingsruimte zitten?"].map((v, i) => (
+              <div key={i} style={{ fontSize: 11, fontFamily: "sans-serif", color: "#2D6A4F", marginBottom: 4 }}>· {v}</div>
+            ))}
+          </div>
+        </div>
+
+        {/* Print CSS voor landscape tabel */}
+        <style>{`
+          @page { size: portrait; margin: 1.5cm; }
+          @page landscape-page { size: landscape; margin: 1.5cm; }
+          .print-landscape { page: landscape-page; }
+        `}</style>
+
+        {/* Section 2: Vergelijking */}
+        <div className="print-landscape" style={{ pageBreakBefore: "always", paddingTop: 24, marginBottom: 40 }}>
+          <div style={{ borderBottom: "2px solid #1A5C3A", marginBottom: 20, paddingBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 18 }}>⚖️</span>
+            <h2 style={{ margin: 0, fontSize: 18, color: "#1A5C3A", fontWeight: "bold" }}>Alle opties vergeleken</h2>
+          </div>
+          <div style={{ background: "white", borderRadius: 8, overflow: "hidden", border: "1px solid #e0d8cc" }}>
+            <VoorNadelenTabel opties={OPTIONS} filter="Alles" onSelect={() => {}} printMode={true} />
+          </div>
+        </div>
+
+        {/* Section 3: Alle opties */}
+        <div style={{ pageBreakBefore: "always", paddingTop: 24 }}>
+          <div style={{ borderBottom: "2px solid #1A5C3A", marginBottom: 20, paddingBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 18 }}>🏠</span>
+            <h2 style={{ margin: 0, fontSize: 18, color: "#1A5C3A", fontWeight: "bold" }}>Alle opties — volledig uitgewerkt</h2>
+          </div>
+          {OPTIONS.map(opt => (
+            <div key={opt.id} style={{ pageBreakInside: "avoid", marginBottom: 24 }}>
+              <OptieKaart opt={opt} open={false} forceOpen={true} onToggle={() => {}} leafletReady={leafletReady} />
+            </div>
+          ))}
+        </div>
+        </div>
+      </div>
+    )}
+
+    {/* ── NORMALE LAYOUT ── */}
+    {!isPrinting && (
+    <div style={{ minHeight: "100vh" }}>
+
+      {/* Header */}
+      <div style={{ background: "linear-gradient(135deg, #1A5C3A, #0f3a24)", padding: "26px 20px 0", color: "white" }}>
+        <div style={{ fontSize: 9, letterSpacing: 3, textTransform: "uppercase", opacity: 0.5, marginBottom: 6, fontFamily: "sans-serif" }}>
+          Oriëntatiepakket · Regio Soest · Mei 2026
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 22, fontWeight: "normal" }}>Wonen voor een volgende levensfase</h1>
+            <p style={{ margin: "6px 0 16px", fontSize: 12, opacity: 0.65, fontFamily: "sans-serif", lineHeight: 1.5 }}>
+              17 opties · Soest · Amersfoort · Bilthoven · Bunschoten · incl. hofjes & nieuwbouw
+            </p>
+          </div>
+          <button onClick={handlePreview} style={{ flexShrink: 0, marginTop: 4, padding: "6px 12px", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 6, color: "white", fontFamily: "sans-serif", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}>
+            🖨 Afdrukken
+          </button>
+        </div>
+        {/* Sectie-navigatie */}
+        <div style={{ display: "flex", gap: 0, borderTop: "1px solid rgba(255,255,255,0.15)" }}>
+          {NAV.map(n => (
+            <button key={n.id} onClick={() => setSectie(n.id)} style={{
+              padding: "10px 14px", background: "none", border: "none", color: "white",
+              borderBottom: sectie === n.id ? "3px solid white" : "3px solid transparent",
+              opacity: sectie === n.id ? 1 : 0.55, cursor: "pointer", fontFamily: "sans-serif",
+              fontSize: 12, fontWeight: sectie === n.id ? 700 : 400, transition: "all 0.15s",
+            }}>{n.label}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── SECTIE: Stappenplan ── */}
+      {sectie === "stappenplan" && (
+        <div style={{ padding: "20px 16px 60px" }}>
+          <div style={{ background: "white", borderRadius: 12, padding: "20px 18px", marginBottom: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
+            <h2 style={{ fontFamily: "Georgia, serif", color: "#1A5C3A", fontSize: 18, marginBottom: 6, fontWeight: "bold" }}>Hoe gebruikt u dit pakket?</h2>
+            <p style={{ fontSize: 13, lineHeight: 1.7, color: "#444", margin: 0 }}>
+              Dit pakket is samengesteld om rustig en op eigen tempo de mogelijkheden te verkennen voor een prettige volgende woonomgeving. U hoeft niets te beslissen — het gaat erom een gevoel te krijgen: wat spreekt mij aan?
+            </p>
+          </div>
+
+          {STAPPEN.map((s) => (
+            <div key={s.nr} style={{ display: "flex", gap: 14, marginBottom: 12, background: "white", borderRadius: 12, padding: "16px 16px", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+              <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#1A5C3A", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "sans-serif", fontWeight: 700, fontSize: 16, flexShrink: 0 }}>
+                {s.nr}
+              </div>
+              <div>
+                <div style={{ fontWeight: "bold", fontSize: 14, color: "#1A5C3A", marginBottom: 4, fontFamily: "sans-serif" }}>{s.titel}</div>
+                <div style={{ fontSize: 13, color: "#555", lineHeight: 1.6 }}>{s.tekst}</div>
+              </div>
+            </div>
+          ))}
+
+          <div style={{ background: "#EAF2EC", borderRadius: 12, padding: "16px 18px", marginTop: 20, border: "1px solid #b8dfc4" }}>
+            <div style={{ fontFamily: "sans-serif", fontWeight: 700, color: "#1A5C3A", marginBottom: 8, fontSize: 13 }}>💡 Wat mee te nemen bij een bezoek</div>
+            {[
+              "Is er een wachtlijst, en hoe lang is die?",
+              "Wat zijn de totale maandelijkse kosten (huur/koop + servicekosten + zorg)?",
+              "Hoe werkt zorgopschaling als mijn behoefte groeit — kan ik hier blijven?",
+              "Wat is de gemiddelde leeftijd van de huidige bewoners?",
+              "Zijn er activiteiten, en wie organiseert die?",
+              "Mag ik een appartement zien en even in de ontmoetingsruimte zitten?",
+            ].map((v, i) => (
+              <div key={i} style={{ fontSize: 12, fontFamily: "sans-serif", color: "#2D6A4F", marginBottom: 5 }}>· {v}</div>
+            ))}
+          </div>
+
+          <div style={{ marginTop: 20, display: "flex", gap: 10 }}>
+            <button onClick={() => setSectie("voordelen")} style={{ flex: 1, padding: "12px", background: "#1A5C3A", color: "white", border: "none", borderRadius: 8, fontFamily: "sans-serif", fontSize: 13, cursor: "pointer" }}>
+              ⚖️ Bekijk vergelijking →
+            </button>
+            <button onClick={() => setSectie("opties")} style={{ flex: 1, padding: "12px", background: "#f0ebe0", color: "#555", border: "1px solid #ddd", borderRadius: 8, fontFamily: "sans-serif", fontSize: 13, cursor: "pointer" }}>
+              🏠 Bekijk alle opties →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── SECTIE: Vergelijking ── */}
+      {sectie === "voordelen" && (
+        <div style={{ padding: "16px 16px 60px" }}>
+          <div style={{ background: "white", borderRadius: 12, padding: "16px 16px", marginBottom: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+            <h2 style={{ fontFamily: "Georgia, serif", color: "#1A5C3A", fontSize: 16, marginBottom: 8 }}>Alle opties vergeleken</h2>
+            <p style={{ fontSize: 12, color: "#777", fontFamily: "sans-serif", margin: "0 0 12px", lineHeight: 1.5 }}>
+              🌿 = Groen &amp; natuur &nbsp;·&nbsp; 👥 = Sociale omgeving &nbsp;·&nbsp; ✨ = Luxe &amp; uitstraling
+            </p>
+            {/* Filter */}
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {categories.map(cat => (
+                <button key={cat} onClick={() => setFilter(cat)} style={{
+                  padding: "4px 10px", borderRadius: 16, border: "none",
+                  background: filter === cat ? "#1A5C3A" : "#f0ebe0",
+                  color: filter === cat ? "white" : "#555",
+                  fontSize: 11, cursor: "pointer", fontFamily: "sans-serif",
+                }}>{cat}</button>
+              ))}
+            </div>
+          </div>
+          <div style={{ background: "white", borderRadius: 12, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", marginBottom: 14 }}>
+            <VoorNadelenTabel opties={OPTIONS} filter={filter} onSelect={handleSelectOptie} />
+          </div>
+          <button onClick={() => setSectie("opties")} style={{ width: "100%", padding: "12px", background: "#1A5C3A", color: "white", border: "none", borderRadius: 8, fontFamily: "sans-serif", fontSize: 13, cursor: "pointer" }}>
+            🏠 Bekijk uitgebreide opties →
+          </button>
+        </div>
+      )}
+
+      {/* ── SECTIE: Opties ── */}
+      {sectie === "opties" && (
+        <div>
+          {/* Filters */}
+          <div style={{ padding: "12px 14px", display: "flex", gap: 6, flexWrap: "wrap", background: "#ece7d9", borderBottom: "1px solid #d8cfbe" }}>
+            {categories.map(cat => (
+              <button key={cat} onClick={() => setFilter(cat)} style={{
+                padding: "5px 12px", borderRadius: 20, border: "none",
+                background: filter === cat ? "#1A5C3A" : "white",
+                color: filter === cat ? "white" : "#555",
+                fontSize: 11, cursor: "pointer", fontFamily: "sans-serif",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+              }}>{cat}</button>
+            ))}
+          </div>
+
+          <div style={{ padding: "14px 14px 80px" }}>
+            {filtered.map(opt => (
+              <OptieKaart
+                key={opt.id}
+                opt={opt}
+                open={actief === opt.id}
+                onToggle={() => setActief(actief === opt.id ? null : opt.id)}
+                leafletReady={leafletReady}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#1A5C3A", color: "rgba(255,255,255,0.55)", fontSize: 10, fontFamily: "sans-serif", textAlign: "center", padding: "8px" }}>
+        Samengesteld mei 2026 · Controleer actuele beschikbaarheid bij de locatie zelf
+      </div>
+    </div>)}
+    </div>
+  );
+}
+
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
