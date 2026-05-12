@@ -13,6 +13,9 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #f4f0e8; }
   #root { min-height: 100vh; }
+  @page { size: portrait; margin: 1.5cm; }
+  @page landscape-page { size: landscape; margin: 1.5cm; }
+  .print-landscape { page: landscape-page; }
 </style>
 </head>
 <body>
@@ -703,12 +706,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* Print CSS voor landscape tabel */}
-        <style>{`
-          @page { size: portrait; margin: 1.5cm; }
-          @page landscape-page { size: landscape; margin: 1.5cm; }
-          .print-landscape { page: landscape-page; }
-        `}</style>
+        {/* Print CSS in <head> */}
 
         {/* Section 2: Vergelijking */}
         <div className="print-landscape" style={{ pageBreakBefore: "always", paddingTop: 24, marginBottom: 40 }}>
