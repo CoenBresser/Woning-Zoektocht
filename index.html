@@ -20,6 +20,8 @@
 <body>
 <div id="root"></div>
 <script>
+const { useState, useEffect, useRef } = React;
+
 // ── Data ─────────────────────────────────────────────────────────────────────
 
 const OPTIONS = [{
@@ -1104,7 +1106,7 @@ function OptieKaart({
 }
 
 // ── App ───────────────────────────────────────────────────────────────────────
-export default function App() {
+function App() {
   const [actief, setActief] = useState(null);
   const [filter, setFilter] = useState("Alles");
   const [sectie, setSectie] = useState("stappenplan");
